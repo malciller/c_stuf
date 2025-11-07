@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <body>
+
+    Test
+  </body>
+  <script>
+    window.onload = () => {
+        if ('WebSocket' in window) {
+            // Create a WebSocket connection
+            let ws = new WebSocket('ws://calvins-macbook-pro:8080/websocket');
+            // Push a message when the connection is successfully established, and the server can start pushing data
+            ws.onopen = () => {
+                console.log('websocket success---');
+                ws.send('success');
+            }
+            ws.onmessage = (message) => {
+                let data = message.data;
+                console.log('get websocket message---', data);
+            }
+            ws.onerror = () => {
+                console.error('websocket fail');
+            }
+        } else {
+            console.error('dont support websocket');
+        };
+    };
+</script>
+
+</head>
+<body>
+  
+</body>
+</html>
