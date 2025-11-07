@@ -1,0 +1,99 @@
+/*
+ * Canvas and grid styles for the dashboard
+ */
+
+/* Canvas container */
+.canvas-container {
+  position: relative;
+  background-color: #0f172a; /* slate-950 */
+  overflow: hidden;
+}
+
+/* Canvas grid background */
+.canvas-grid {
+  pointer-events: none;
+}
+
+/* Canvas grid dots */
+.canvas-grid svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Canvas interaction states */
+.canvas-container:hover .canvas-grid circle {
+  fill: #4b5563; /* slate-600 on hover */
+}
+
+/* Canvas selection overlay (when dragging) */
+.canvas-drop-zone {
+  position: absolute;
+  border: 2px dashed #3b82f6; /* blue-500 */
+  background-color: rgba(59, 130, 246, 0.1); /* blue-500 with opacity */
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 4px;
+}
+
+/* Canvas resize handles (if needed later) */
+.canvas-resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #3b82f6; /* blue-500 */
+  border-radius: 50%;
+  cursor: nw-resize;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.canvas-container:hover .canvas-resize-handle {
+  opacity: 0.8;
+}
+
+/* Canvas scrollbars */
+.canvas-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.canvas-container::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-950 */
+  border-radius: 4px;
+}
+
+.canvas-container::-webkit-scrollbar-thumb {
+  background: #374151; /* slate-700 */
+  border-radius: 4px;
+}
+
+.canvas-container::-webkit-scrollbar-thumb:hover {
+  background: #4b5563; /* slate-600 */
+}
+
+/* Canvas loading state */
+.canvas-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #64748b; /* slate-500 */
+  font-size: 18px;
+}
+
+.canvas-loading::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid #374151; /* slate-700 */
+  border-top: 2px solid #3b82f6; /* blue-500 */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 12px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+

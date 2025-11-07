@@ -1,0 +1,13 @@
+/*
+ * Telemetry view specific styles
+ */
+
+/* Telemetry metric card specific styles can be added here */
+.telemetry-card {
+  transition: transform 0.2s ease;
+}
+
+.telemetry-card:hover {
+  transform: scale(1.02);
+}
+

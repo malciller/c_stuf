@@ -1,0 +1,146 @@
+/*
+ * Context menu styles
+ */
+
+.context-menu {
+  position: fixed;
+  background-color: #1e293b; /* slate-800 */
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 6px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 2000;
+  min-width: 160px;
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s;
+}
+
+.context-menu-item:hover {
+  background-color: #334155; /* slate-700 */
+}
+
+.context-menu-item:active {
+  background-color: #475569; /* slate-600 */
+}
+
+.context-menu-icon {
+  font-size: 14px;
+  margin-right: 8px;
+  width: 16px;
+  text-align: center;
+}
+
+.context-menu-text {
+  font-size: 14px;
+  color: #e2e8f0; /* slate-200 */
+  flex: 1;
+}
+
+.context-menu-separator {
+  height: 1px;
+  background-color: #334155; /* slate-700 */
+  margin: 4px 0;
+}
+
+/* Disabled state */
+.context-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+  background-color: transparent;
+}
+
+/* Submenu indicator (if needed later) */
+.context-menu-item.has-submenu::after {
+  content: '▶';
+  font-size: 10px;
+  color: #64748b; /* slate-500 */
+  margin-left: 8px;
+  transform: rotate(0deg);
+  transition: transform 0.15s;
+}
+
+.context-menu-item.has-submenu:hover::after {
+  transform: rotate(90deg);
+}
+
+/* Animation */
+.context-menu {
+  animation: contextMenuFadeIn 0.1s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .context-menu {
+    min-width: 140px;
+  }
+
+  .context-menu-item {
+    padding: 10px 12px;
+  }
+
+  .context-menu-icon {
+    font-size: 16px;
+    width: 18px;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .context-menu {
+    border-width: 2px;
+  }
+
+  .context-menu-separator {
+    background-color: #64748b; /* slate-500 */
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .context-menu {
+    animation: none;
+  }
+
+  .context-menu-item.has-submenu::after {
+    transition: none;
+  }
+}
+
+/* Dark theme specific adjustments */
+@media (prefers-color-scheme: dark) {
+  /* Already dark, but ensure proper contrast */
+  .context-menu-text {
+    color: #f1f5f9; /* slate-100 */
+  }
+
+  .context-menu-item:hover {
+    background-color: #374151; /* slate-700 */
+  }
+
+  .context-menu-item:active {
+    background-color: #4b5563; /* slate-600 */
+  }
+}
+

@@ -1,0 +1,497 @@
+/*
+ * Modal styles for widget selection and other overlays
+ */
+
+/* Modal overlay */
+.widget-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  animation: modalFadeIn 0.2s ease-out forwards;
+}
+
+.widget-modal-overlay.dragging {
+  backdrop-filter: blur(2px);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal content */
+.widget-modal-content {
+  background-color: #1e293b; /* slate-800 */
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 800px;
+  max-height: 80vh;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.9) translateY(20px);
+  animation: modalScaleIn 0.2s ease-out forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Modal header */
+.widget-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #334155; /* slate-700 */
+  background-color: #0f172a; /* slate-950 */
+}
+
+.widget-modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #e2e8f0; /* slate-200 */
+}
+
+.widget-modal-close {
+  background: none;
+  border: none;
+  color: #64748b; /* slate-500 */
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.widget-modal-close:hover {
+  background-color: #dc2626; /* red-600 */
+  color: #fef2f2; /* red-50 */
+}
+
+/* Modal search */
+.widget-modal-search {
+  padding: 16px 24px;
+  border-bottom: 1px solid #334155; /* slate-700 */
+}
+
+.widget-modal-search-input {
+  width: 100%;
+  padding: 10px 16px;
+  background-color: #0f172a; /* slate-950 */
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 6px;
+  color: #e2e8f0; /* slate-200 */
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.widget-modal-search-input:focus {
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.widget-modal-search-input::placeholder {
+  color: #64748b; /* slate-500 */
+}
+
+/* Modal categories */
+.widget-modal-categories {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 24px 24px;
+}
+
+.widget-modal-category {
+  margin-bottom: 24px;
+}
+
+.widget-modal-category-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #cbd5e1; /* slate-300 */
+  text-transform: capitalize;
+}
+
+/* Modal widgets grid */
+.widget-modal-widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+/* Modal widget cards */
+.widget-modal-card {
+  background-color: #0f172a; /* slate-950 */
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  position: relative;
+}
+
+.widget-modal-card:hover {
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.widget-modal-card.selected {
+  border-color: #3b82f6; /* blue-500 */
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Widget card checkbox */
+.widget-modal-card-checkbox {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.widget-modal-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #64748b; /* slate-500 */
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.widget-modal-checkbox:checked {
+  background-color: #3b82f6; /* blue-500 */
+  border-color: #3b82f6; /* blue-500 */
+}
+
+.widget-modal-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.widget-modal-checkbox:hover {
+  border-color: #3b82f6; /* blue-500 */
+}
+
+.widget-modal-checkbox-label {
+  display: none; /* Using the checkbox directly */
+}
+
+/* Widget card content */
+.widget-modal-card-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.widget-modal-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0; /* slate-200 */
+  margin-bottom: 4px;
+}
+
+.widget-modal-card-description {
+  font-size: 12px;
+  color: #64748b; /* slate-500 */
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.widget-modal-card-size {
+  font-size: 11px;
+  color: #475569; /* slate-600 */
+  background-color: #334155; /* slate-700 */
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Modal subsections */
+.widget-modal-subsection {
+  margin-bottom: 20px;
+}
+
+.widget-modal-subsection-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #1e293b; /* slate-800 */
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  user-select: none;
+}
+
+.widget-modal-subsection-header:hover {
+  background-color: #334155; /* slate-700 */
+  border-color: #3b82f6; /* blue-500 */
+}
+
+.widget-modal-subsection-toggle {
+  background: none;
+  border: none;
+  color: #64748b; /* slate-500 */
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: auto;
+  border-radius: 3px;
+  transition: all 0.2s;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.widget-modal-subsection-toggle:hover {
+  background-color: #334155; /* slate-700 */
+  color: #e2e8f0; /* slate-200 */
+}
+
+.widget-modal-subsection-toggle {
+  transition: transform 0.2s ease-in-out, color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+.widget-modal-subsection-toggle.collapsed {
+  transform: rotate(0deg);
+}
+
+.widget-modal-subsection-toggle:not(.collapsed) {
+  transform: rotate(0deg);
+}
+
+/* Collapsible metrics grid */
+.widget-modal-metrics-grid {
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transform: scaleY(1);
+  transform-origin: top;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.widget-modal-metrics-grid.collapsed {
+  opacity: 0;
+  transform: scaleY(0);
+  max-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.widget-modal-subsection-checkbox {
+  margin-right: 12px;
+}
+
+.widget-modal-subsection-label {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0; /* slate-200 */
+}
+
+.widget-modal-subsection-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.widget-modal-subsection-title {
+  margin-right: 8px;
+}
+
+.widget-modal-subsection-count {
+  font-size: 12px;
+  color: #64748b; /* slate-500 */
+  background-color: #334155; /* slate-700 */
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* Modal metrics grid */
+.widget-modal-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+/* Modal metric cards */
+.widget-modal-metric-card {
+  background-color: #1e293b; /* slate-800 */
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 6px;
+  padding: 12px;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.widget-modal-metric-card:hover {
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+/* Modal footer */
+.widget-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid #334155; /* slate-700 */
+  background-color: #0f172a; /* slate-950 */
+}
+
+.widget-modal-selected-count {
+  font-size: 14px;
+  color: #64748b; /* slate-500 */
+}
+
+.widget-modal-add-btn {
+  background-color: #3b82f6; /* blue-500 */
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.widget-modal-add-btn:hover:not(:disabled) {
+  background-color: #2563eb; /* blue-600 */
+  transform: translateY(-1px);
+}
+
+.widget-modal-add-btn:disabled {
+  background-color: #374151; /* slate-700 */
+  color: #64748b; /* slate-500 */
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Modal responsive design */
+@media (max-width: 768px) {
+  .widget-modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .widget-modal-header {
+    padding: 16px 20px;
+  }
+
+  .widget-modal-search {
+    padding: 12px 20px;
+  }
+
+  .widget-modal-categories {
+    padding: 0 20px 20px 20px;
+  }
+
+  .widget-modal-footer {
+    padding: 12px 20px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .widget-modal-widgets-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .widget-modal-card {
+    padding: 12px;
+  }
+
+  .widget-modal-add-btn {
+    width: 100%;
+  }
+}
+
+/* Modal animations for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .widget-modal-overlay,
+  .widget-modal-content {
+    animation: none;
+  }
+
+  .widget-modal-card {
+    transition: none;
+  }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .widget-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.9);
+  }
+
+  .widget-modal-content {
+    border-width: 2px;
+  }
+
+  .widget-modal-card {
+    border-width: 2px;
+  }
+}
+
+/* Modal scrollbar styling */
+.widget-modal-categories::-webkit-scrollbar {
+  width: 6px;
+}
+
+.widget-modal-categories::-webkit-scrollbar-track {
+  background: #1e293b; /* slate-800 */
+  border-radius: 3px;
+}
+
+.widget-modal-categories::-webkit-scrollbar-thumb {
+  background: #475569; /* slate-600 */
+  border-radius: 3px;
+}
+
+.widget-modal-categories::-webkit-scrollbar-thumb:hover {
+  background: #64748b; /* slate-500 */
+}
+

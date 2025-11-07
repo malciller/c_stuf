@@ -59,14 +59,48 @@ typedef struct {
     message_queue_t message_queue;
 } ws_channel_t;
 
+// Metrics snapshot storage for structured streams (telemetry, balance, system)
+typedef struct {
+    char *latest_message;  // Latest JSON message received
+    size_t message_len;    // Length of the message
+    time_t last_updated;   // When this snapshot was last updated
+} metrics_snapshot_t;
+
 ws_channel_t channels[STREAM_COUNT];
+static metrics_snapshot_t metrics_snapshots[STREAM_COUNT];  // Index corresponds to STREAMS array
+static pthread_mutex_t metrics_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct lws_context *g_context = NULL;
 static volatile sig_atomic_t g_shutdown = 0;
 
+// Global storage for active TCP sockets (one per stream)
+static int active_tcp_sockets[STREAM_COUNT] = {0};  // 0 means no active connection
+static pthread_mutex_t tcp_sockets_lock = PTHREAD_MUTEX_INITIALIZER;
+
+// Forward declarations
+static void log_msg(const char *fmt, ...);
+static void log_metrics_snapshots(void);
+
 // ----------------- Signal Handling -----------------
 static void signal_handler(int sig) {
-    (void)sig;  // Unused parameter
+    if (sig == SIGUSR1) {
+        // Log metrics snapshots on demand
+        log_metrics_snapshots();
+        return;
+    }
+
     g_shutdown = 1;
+
+    // Close all active TCP sockets to interrupt blocking operations
+    pthread_mutex_lock(&tcp_sockets_lock);
+    for (size_t i = 0; i < STREAM_COUNT; i++) {
+        if (active_tcp_sockets[i] > 0) {
+            log_msg("Closing TCP socket for stream '%s' (fd=%d) due to shutdown", STREAMS[i], active_tcp_sockets[i]);
+            close(active_tcp_sockets[i]);
+            active_tcp_sockets[i] = 0;
+        }
+    }
+    pthread_mutex_unlock(&tcp_sockets_lock);
+
     if (g_context) {
         lws_cancel_service(g_context);
     }
@@ -99,6 +133,56 @@ static void log_msg(const char *fmt, ...) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     va_end(ap);
+}
+
+// ----------------- Metrics Snapshot Logging -----------------
+static void log_metrics_snapshots(void) {
+    time_t now = time(NULL);
+    char ts[32];
+    struct tm tm;
+    localtime_r(&now, &tm);
+    strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm);
+
+    log_msg("=== METRICS SNAPSHOTS (%s) ===", ts);
+
+    pthread_mutex_lock(&metrics_lock);
+
+    for (size_t i = 0; i < STREAM_COUNT; i++) {
+        const char *stream_name = STREAMS[i];
+
+        // Only log balance stream snapshots, skip others
+        if (strcmp(stream_name, "balance") != 0) {
+            continue;
+        }
+
+        metrics_snapshot_t *snapshot = &metrics_snapshots[i];
+
+        if (snapshot->latest_message && snapshot->message_len > 0) {
+            char update_ts[32];
+            struct tm update_tm;
+            localtime_r(&snapshot->last_updated, &update_tm);
+            strftime(update_ts, sizeof(update_ts), "%Y-%m-%d %H:%M:%S", &update_tm);
+
+            log_msg("STREAM '%s' - Last updated: %s - Size: %zu bytes",
+                    stream_name, update_ts, snapshot->message_len);
+
+            // Log up to 10000 characters to see orders section
+            size_t preview_len = snapshot->message_len > 10000 ? 10000 : snapshot->message_len;
+            char *preview = malloc(preview_len + 1);
+            if (preview) {
+                memcpy(preview, snapshot->latest_message, preview_len);
+                preview[preview_len] = '\0';
+                log_msg("DATA PREVIEW: %s%s", preview,
+                        snapshot->message_len > 10000 ? "..." : "");
+                free(preview);
+            }
+        } else {
+            log_msg("STREAM '%s' - No data received yet", stream_name);
+        }
+    }
+
+    pthread_mutex_unlock(&metrics_lock);
+    log_msg("=== END METRICS SNAPSHOTS ===");
 }
 
 // ----------------- Message Queue Operations -----------------
@@ -184,6 +268,12 @@ static void broadcast_message(ws_channel_t *ch, const char *data, size_t len) {
 
 // ----------------- TCP Connect -----------------
 static int connect_host(const char *host, const char *port) {
+    // Check if shutdown has been requested
+    if (g_shutdown) {
+        log_msg("connect_host() aborted due to shutdown request");
+        return -1;
+    }
+
     struct addrinfo hints = {0}, *res = NULL, *rp;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -219,6 +309,14 @@ static int connect_host(const char *host, const char *port) {
 
         if (connect(fd, rp->ai_addr, rp->ai_addrlen) == 0) break;
         if (errno == EINPROGRESS) {
+            // Check if shutdown has been requested before waiting
+            if (g_shutdown) {
+                close(fd);
+                fd = -1;
+                log_msg("connect_host() aborted during EINPROGRESS wait due to shutdown");
+                break;
+            }
+
             // Non-blocking connect in progress - wait a bit and check
             fd_set writefds;
             struct timeval tv = {1, 0}; // 1 second timeout
@@ -305,6 +403,27 @@ static void handle_tcp_message(const char *stream, const char *msg) {
                 log_msg("INFO: Stream '%s' has %zu connected clients", channels[i].stream_name, client_count);
             }
 
+            // Store metrics snapshot for structured streams (skip 'log' stream)
+            if (strcmp(stream, "log") != 0) {
+                pthread_mutex_lock(&metrics_lock);
+
+                // Free previous message if it exists
+                if (metrics_snapshots[i].latest_message) {
+                    free(metrics_snapshots[i].latest_message);
+                }
+
+                // Allocate and copy the new message
+                metrics_snapshots[i].latest_message = malloc(msg_len + 1);
+                if (metrics_snapshots[i].latest_message) {
+                    memcpy(metrics_snapshots[i].latest_message, msg, msg_len);
+                    metrics_snapshots[i].latest_message[msg_len] = '\0';
+                    metrics_snapshots[i].message_len = msg_len;
+                    metrics_snapshots[i].last_updated = now;
+                }
+
+                pthread_mutex_unlock(&metrics_lock);
+            }
+
             pthread_mutex_unlock(&channels[i].lock);
             break;
         }
@@ -319,6 +438,13 @@ static int read_loop_dispatch(int fd, const char *stream) {
     size_t used = 0;
 
     while (1) {
+        // Check if shutdown has been requested
+        if (g_shutdown) {
+            log_msg("Read loop for stream '%s' exiting due to shutdown request", stream);
+            free(buf);
+            return -2;  // Special return code for shutdown
+        }
+
         // Use select to wait for data availability with a timeout
         fd_set readfds;
         struct timeval tv = {0, 10000}; // 10ms timeout
@@ -401,6 +527,25 @@ static int read_loop_dispatch(int fd, const char *stream) {
     }
 }
 
+// ----------------- Metrics Timer Thread -----------------
+static void *metrics_timer_thread(void *arg) {
+    (void)arg;  // Unused parameter
+
+    // Log initial snapshot after startup
+    sleep(5);  // Wait 5 seconds for initial data
+    log_metrics_snapshots();
+
+    // Log snapshots every 30 seconds
+    while (!g_shutdown) {
+        sleep(30);
+        if (!g_shutdown) {
+            log_metrics_snapshots();
+        }
+    }
+
+    return NULL;
+}
+
 // ----------------- TCP Thread -----------------
 typedef struct {
     char *host;
@@ -412,17 +557,67 @@ static void *tcp_thread(void *arg) {
     stream_spec_t *spec = (stream_spec_t *)arg;
     int backoff = 1;
 
+    // Find the stream index for socket tracking
+    size_t stream_idx = (size_t)-1;
+    for (size_t i = 0; i < STREAM_COUNT; i++) {
+        if (strcmp(spec->stream, STREAMS[i]) == 0) {
+            stream_idx = i;
+            break;
+        }
+    }
+    if (stream_idx == (size_t)-1) {
+        log_msg("ERROR: Could not find stream index for '%s'", spec->stream);
+        return NULL;
+    }
+
     for (;;) {
+        // Check if shutdown has been requested
+        if (g_shutdown) {
+            log_msg("TCP thread for stream '%s' exiting due to shutdown request", spec->stream);
+            break;
+        }
+
         log_msg("connecting to %s:%s for stream '%s'", spec->host, spec->port, spec->stream);
         int fd = connect_host(spec->host, spec->port);
-        if (fd < 0) { sleep(backoff); backoff = backoff < MAX_BACKOFF_SEC ? backoff * 2 : MAX_BACKOFF_SEC; continue; }
+        if (fd < 0) {
+            if (g_shutdown) {
+                log_msg("TCP thread for stream '%s' exiting during connection attempt", spec->stream);
+                break;
+            }
+            sleep(backoff); backoff = backoff < MAX_BACKOFF_SEC ? backoff * 2 : MAX_BACKOFF_SEC; continue;
+        }
 
-        if (send_stream_header(fd, spec->stream) != 0) { close(fd); sleep(backoff); backoff = backoff < MAX_BACKOFF_SEC ? backoff * 2 : MAX_BACKOFF_SEC; continue; }
+        // Store the socket fd for shutdown interruption
+        pthread_mutex_lock(&tcp_sockets_lock);
+        active_tcp_sockets[stream_idx] = fd;
+        pthread_mutex_unlock(&tcp_sockets_lock);
+
+        if (send_stream_header(fd, spec->stream) != 0) {
+            pthread_mutex_lock(&tcp_sockets_lock);
+            active_tcp_sockets[stream_idx] = 0;  // Clear socket fd
+            pthread_mutex_unlock(&tcp_sockets_lock);
+            close(fd);
+            if (g_shutdown) {
+                log_msg("TCP thread for stream '%s' exiting after header send failure", spec->stream);
+                break;
+            }
+            sleep(backoff); backoff = backoff < MAX_BACKOFF_SEC ? backoff * 2 : MAX_BACKOFF_SEC; continue;
+        }
 
         backoff = 1;
         log_msg("subscribed to stream '%s'", spec->stream);
         int result = read_loop_dispatch(fd, spec->stream);
+
+        // Clear the socket fd before closing
+        pthread_mutex_lock(&tcp_sockets_lock);
+        active_tcp_sockets[stream_idx] = 0;
+        pthread_mutex_unlock(&tcp_sockets_lock);
         close(fd);
+
+        if (g_shutdown || result == -2) {
+            log_msg("TCP thread for stream '%s' exiting after read loop (shutdown)", spec->stream);
+            break;
+        }
 
         if (result == 0) {
             // Normal completion (EOF), wait before reconnecting for periodic updates
@@ -708,9 +903,10 @@ int main(void) {
     stream_spec_t specs[STREAM_COUNT];
     struct lws_protocols protocols[STREAM_COUNT + 1];
 
-    // Set up signal handlers for graceful shutdown
+    // Set up signal handlers for graceful shutdown and metrics snapshots
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
+    signal(SIGUSR1, signal_handler);  // For on-demand metrics snapshots
 
     for (size_t i = 0; i < STREAM_COUNT; i++) {
         strncpy(channels[i].stream_name, STREAMS[i], sizeof(channels[i].stream_name));
@@ -759,6 +955,10 @@ int main(void) {
         pthread_create(&tcp_threads[i], NULL, tcp_thread, &specs[i]);
     }
 
+    // Start metrics timer thread
+    pthread_t metrics_timer;
+    pthread_create(&metrics_timer, NULL, metrics_timer_thread, NULL);
+
     log_msg("WebSocket server listening on port %d", BASE_WS_PORT);
 
     // Main service loop
@@ -767,6 +967,18 @@ int main(void) {
     }
 
     log_msg("Shutting down...");
+
+    // Clean up metrics snapshots
+    pthread_mutex_lock(&metrics_lock);
+    for (size_t i = 0; i < STREAM_COUNT; i++) {
+        if (metrics_snapshots[i].latest_message) {
+            free(metrics_snapshots[i].latest_message);
+            metrics_snapshots[i].latest_message = NULL;
+            metrics_snapshots[i].message_len = 0;
+            metrics_snapshots[i].last_updated = 0;
+        }
+    }
+    pthread_mutex_unlock(&metrics_lock);
 
     // Clean up message queues
     for (size_t i = 0; i < STREAM_COUNT; i++) {

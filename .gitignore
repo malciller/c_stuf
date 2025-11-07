@@ -1,0 +1,5 @@
+libwebsockets-install/
+libwebsockets-src/
+*.log
+*.out
+*.exe
