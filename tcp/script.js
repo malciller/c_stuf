@@ -1,5 +1,5 @@
     const streams = ['telemetry', 'balance', 'log', 'system'];
-    // Dynamically detect hostname from current page URL t
+    // Dynamically detect hostname from current page URL 
     const hostname = window.location.hostname || 'dev-node-1';
     const port = 9000;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
