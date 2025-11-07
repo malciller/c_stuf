@@ -145,7 +145,7 @@ export function getMetricType(metric, metricName) {
     const name = metricName.toLowerCase();
 
     // Time patterns
-    const timePatterns = ['time', 'duration', 'latency', 'elapsed', 'wait', 'delay', 'period', 'interval'];
+    const timePatterns = ['time', 'duration', 'latency', 'elapsed', 'wait', 'delay', 'period', 'interval', 'seconds', 'sec'];
     if (timePatterns.some(pattern => name.includes(pattern))) {
       return 'time';
     }
