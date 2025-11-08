@@ -67,7 +67,7 @@ export function formatTime(value) {
 export function formatMemory(value) {
   if (value === null || value === undefined || value === 0) return '0 B';
 
-  const absValue = Math.abs(value);
+  const absValue = Math.abs(value) * 1024; // Convert KB to bytes
   const units = [
     { name: 'B', factor: 1 },
     { name: 'KB', factor: 1024 },

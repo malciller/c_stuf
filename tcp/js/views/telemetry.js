@@ -46,10 +46,20 @@ export function parseTelemetryMessage(msg) {
       const labelsStr = JSON.stringify(labels);
       const key = `${name}|${labelsStr}`;
 
+      // Convert memory metric values from KB to bytes for frontend formatting
+      let processedValue = value !== undefined ? value : null;
+      if (processedValue !== null && typeof processedValue === 'number') {
+        const metricType = getMetricType(metric_type, name);
+        if (metricType === 'memory') {
+          // Convert from KB to bytes (telemetry backend sends in KB, frontend expects bytes)
+          processedValue = processedValue * 1024;
+        }
+      }
+
       telemetryData[key] = {
         name,
         labels,
-        value: value !== undefined ? value : null,
+        value: processedValue,
         cached_rate,
         last_updated,
         metric_type,  // Store the full metric_type object so we can access type later
