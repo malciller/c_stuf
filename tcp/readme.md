@@ -1,13 +1,10 @@
 # Dio TCP Stream Reader
 
-A TCP to WebSocket bridge for the Dio trading engine that enables real-time streaming of trading data to web clients.
+A TCP to WebSocket bridge for the Dio trading engine that enables real-time streaming of trading data.
 
 ## Overview
 
-This project consists of two main components:
-
-1. **C WebSocket Server** (`stream_reader.c`): Connects to a Dio trading engine via TCP and broadcasts data to WebSocket clients
-2. **JavaScript Web Client**: A dashboard interface that displays streaming data through configurable widgets
+This project provides a C WebSocket server (`stream_reader.c`) that connects to a Dio trading engine via TCP and broadcasts data to WebSocket clients.
 
 The system supports multiple data streams including telemetry metrics, balance information, trading logs, and system status.
 
@@ -17,10 +14,6 @@ The system supports multiple data streams including telemetry metrics, balance i
 - GCC compiler
 - libwebsockets library
 - POSIX compliant system (Linux/macOS)
-
-### Web Client Requirements
-- Modern web browser with WebSocket support
-- No additional dependencies (uses CDN-hosted libraries)
 
 ## Installation
 
@@ -60,21 +53,6 @@ const char *TCP_TOKEN = "password";         // Authentication token
 const char *STREAMS[] = {"telemetry", "balance", "log", "system"};  // Streams to subscribe to
 ```
 
-### Client Configuration
-
-The web client automatically detects the server host and port. By default it connects to:
-- Host: Current hostname (or 'dev-node-1' for localhost)
-- Port: 9000
-- Protocol: ws:// (or wss:// for HTTPS)
-
-To override these defaults, modify the constants in `js/data/state.js`:
-
-```javascript
-export const hostname = window.location.hostname || 'dev-node-1';
-export const port = 9000;
-export const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-```
-
 ## Usage
 
 ### Running the Server
@@ -90,16 +68,6 @@ The server will:
 - Subscribe to specified data streams
 - Start a WebSocket server on port 9000
 - Begin broadcasting received data to connected clients
-
-### Running the Web Client
-
-1. Open `index.html` in a web browser
-2. The client will automatically connect to the WebSocket server
-3. Add widgets to display different types of data:
-   - Telemetry widgets (gauges, counters, histograms)
-   - Balance widgets
-   - Log viewers
-   - System status displays
 
 ## Data Streams
 
@@ -121,20 +89,14 @@ C WebSocket Server
         |
         | WebSocket connections
         v
-JavaScript Web Client
-    - Canvas-based widget system
-    - Real-time data visualization
-    - Persistent widget configurations
+WebSocket Clients
 ```
 
 ## Features
 
 - Real-time data streaming from TCP to WebSocket
-- Configurable widget-based dashboard
 - Automatic reconnection on connection loss
 - Message queuing and buffering
-- Dark theme UI with Tailwind CSS
-- Persistent widget layouts and settings
 - Support for multiple concurrent WebSocket clients
 
 ## Troubleshooting
@@ -143,11 +105,6 @@ JavaScript Web Client
 - Verify Dio trading engine is running and accessible
 - Check TCP_HOST and TCP_PORT configuration
 - Ensure firewall allows connections on configured ports
-
-### WebSocket Connection Failures
-- Confirm server is running and WebSocket port (9000) is accessible
-- Check browser console for connection errors
-- Verify hostname and port configuration in client
 
 ### Build Issues
 - Ensure libwebsockets development headers are installed
