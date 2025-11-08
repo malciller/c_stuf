@@ -8,6 +8,8 @@ This project provides a C WebSocket server (`stream_reader.c`) that connects to 
 
 The system supports multiple data streams including telemetry metrics, balance information, trading logs, and system status.
 
+For an example frontend implementation, please see https://github.com/malciller/js_stuf
+
 ## Prerequisites
 
 ### C Server Requirements
